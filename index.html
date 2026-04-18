@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>家务中控</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0c0c0c;
+  --surface:#151515;
+  --surface2:#1d1d1d;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.11);
+  --text:#ede9e3;
+  --muted:rgba(237,233,227,0.42);
+  --hint:rgba(237,233,227,0.22);
+  --gold:#c9b99a;
+  --teal:#8abcb0;
+  --purple:#a89ac0;
+  --warn:#d08a5e;
+  --green:#82b482;
+  --done-bg:rgba(138,188,176,0.09);
+  --done-text:#8abcb0;
+  --r:12px;
+  --r-sm:7px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:260px 1fr;height:100vh;}
+
+/* ── LEFT PANEL ── */
+.left{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:40px 28px 32px;
+  gap:0;overflow:hidden;
+  position:relative;
+}
+
+/* subtle grain texture */
+.left::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;opacity:0.6;
+}
+
+.time-display{margin-bottom:40px;position:relative;}
+.time-big{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:300;
+  font-size:76px;
+  line-height:0.92;
+  letter-spacing:-3px;
+  color:var(--text);
+}
+.time-date{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+}
+
+.left-divider{height:1px;background:var(--border);margin:0 0 28px;}
+
+/* stat block */
+.stat-group{display:flex;flex-direction:column;gap:16px;margin-bottom:32px;}
+.stat-row{display:flex;align-items:center;justify-content:space-between;}
+.stat-label{font-size:11px;color:var(--muted);letter-spacing:0.06em;}
+.stat-bar-wrap{flex:1;height:2px;background:var(--border2);border-radius:2px;margin:0 12px;overflow:hidden;}
+.stat-bar{height:100%;border-radius:2px;transition:width 0.7s cubic-bezier(.4,0,.2,1);}
+.bar-daily{background:var(--teal);}
+.bar-weekly{background:var(--gold);}
+.bar-monthly{background:var(--purple);}
+.stat-nums{font-size:12px;color:var(--muted);min-width:32px;text-align:right;}
+
+.left-divider2{height:1px;background:var(--border);margin:0 0 24px;}
+
+/* today summary */
+.today-label{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--hint);margin-bottom:16px;}
+.summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.sum-card{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r-sm);
+  padding:14px 10px;
+  text-align:center;
+}
+.sum-big{font-size:26px;font-weight:400;line-height:1;color:var(--text);margin-bottom:4px;}
+.sum-small{font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+
+.left-bottom{margin-top:auto;padding-top:24px;border-top:1px solid var(--border);}
+.status-line{font-size:12px;color:var(--hint);line-height:1.6;}
+.status-line span{color:var(--gold);}
+
+/* reset notice */
+.reset-notice{
+  font-size:11px;color:var(--teal);
+  background:rgba(138,188,176,0.07);
+  border:1px solid rgba(138,188,176,0.15);
+  border-radius:var(--r-sm);
+  padding:8px 12px;margin-top:12px;
+  line-height:1.5;display:none;
+}
+.reset-notice.show{display:block;}
+
+/* ── RIGHT PANEL ── */
+.right{display:flex;flex-direction:column;overflow:hidden;}
+
+/* tab bar */
+.tabbar{
+  display:flex;align-items:stretch;
+  border-bottom:1px solid var(--border);
+  padding:0 36px;
+  flex-shrink:0;
+  gap:0;
+}
+.tab-btn{
+  padding:20px 18px 18px;
+  font-size:12px;font-weight:400;
+  color:var(--muted);
+  background:none;border:none;
+  border-bottom:1.5px solid transparent;
+  cursor:pointer;letter-spacing:0.06em;
+  text-transform:uppercase;
+  transition:color 0.2s;
+  white-space:nowrap;
+}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--gold);}
+.tab-btn:hover:not(.active){color:var(--text);}
+.tabbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.hdr-btn{
+  font-size:11px;letter-spacing:0.05em;
+  color:var(--hint);background:none;
+  border:1px solid var(--border);
+  border-radius:20px;padding:5px 14px;
+  cursor:pointer;transition:all 0.2s;white-space:nowrap;
+}
+.hdr-btn:hover{color:var(--muted);border-color:var(--border2);}
+.hdr-btn.accent{color:var(--gold);border-color:rgba(201,185,154,0.25);}
+.hdr-btn.accent:hover{background:rgba(201,185,154,0.07);}
+
+/* task scroll area */
+.task-scroll{flex:1;overflow-y:auto;padding:28px 36px 36px;}
+.task-scroll::-webkit-scrollbar{width:2px;}
+.task-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* section */
+.section{margin-bottom:32px;}
+.sec-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.sec-name{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--hint);white-space:nowrap;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+.sec-add{
+  font-size:11px;color:var(--hint);
+  background:none;border:none;cursor:pointer;
+  letter-spacing:0.06em;padding:2px 0;
+  transition:color 0.2s;white-space:nowrap;
+}
+.sec-add:hover{color:var(--gold);}
+
+/* task grid */
+.task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px;}
+
+.task-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:15px 16px;
+  cursor:pointer;
+  transition:background 0.15s,border-color 0.15s,opacity 0.2s;
+  display:flex;align-items:flex-start;gap:11px;
+  position:relative;
+}
+.task-card:hover{background:var(--surface2);border-color:var(--border2);}
+.task-card.done{background:var(--done-bg);border-color:rgba(138,188,176,0.12);}
+
+.t-check{
+  width:18px;height:18px;border-radius:50%;
+  border:1px solid var(--border2);
+  flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+}
+.task-card.done .t-check{background:var(--teal);border-color:var(--teal);}
+.t-tick{
+  width:8px;height:5.5px;
+  border-left:1.5px solid #0c0c0c;
+  border-bottom:1.5px solid #0c0c0c;
+  transform:rotate(-45deg) translateY(-1px);
+  opacity:0;transition:opacity 0.15s;
+}
+.task-card.done .t-tick{opacity:1;}
+
+.t-body{flex:1;min-width:0;}
+.t-name{font-size:13px;color:var(--text);line-height:1.45;}
+.task-card.done .t-name{color:var(--done-text);text-decoration:line-through;text-decoration-color:rgba(138,188,176,0.35);}
+.t-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;letter-spacing:0.03em;}
+.tag-warn{background:rgba(208,138,94,0.14);color:var(--warn);}
+.tag-bi{background:rgba(201,185,154,0.13);color:var(--gold);}
+.tag-plant{background:rgba(130,180,130,0.13);color:var(--green);}
+.t-date{font-size:11px;color:var(--done-text);margin-top:4px;opacity:0.65;}
+
+.t-del{
+  position:absolute;top:7px;right:7px;
+  width:18px;height:18px;border-radius:50%;
+  background:none;border:none;
+  color:var(--hint);font-size:13px;
+  cursor:pointer;display:none;
+  align-items:center;justify-content:center;
+  line-height:1;transition:all 0.15s;
+}
+.task-card:hover .t-del{display:flex;}
+.t-del:hover{background:rgba(208,138,94,0.18);color:var(--warn);}
+
+/* inline add row */
+.inline-add-row{
+  display:flex;align-items:center;gap:8px;
+  margin-top:7px;
+}
+.inline-input{
+  flex:1;background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:var(--r-sm);
+  padding:9px 12px;font-size:13px;
+  font-family:'DM Sans',sans-serif;
+  color:var(--text);outline:none;
+  transition:border-color 0.2s;
+}
+.inline-input:focus{border-color:var(--gold);}
+.inline-input::placeholder{color:var(--hint);}
+.inline-ok{
+  padding:9px 16px;font-size:12px;
+  background:var(--gold);color:#1a1610;
+  border:none;border-radius:var(--r-sm);
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  font-weight:500;white-space:nowrap;
+  transition:opacity 0.15s;
+}
+.inline-ok:hover{opacity:0.88;}
+.inline-cancel{
+  padding:9px 12px;font-size:12px;
+  background:none;color:var(--muted);
+  border:1px solid var(--border);
+  border-radius:var(--r-sm);cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:all 0.15s;
+}
+.inline-cancel:hover{border-color:var(--border2);}
+
+/* history */
+.history-list{padding:4px 0;}
+.hist-group{margin-bottom:24px;}
+.hist-group-label{
+  font-size:10px;font-weight:500;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--hint);padding-bottom:10px;
+  border-bottom:1px solid var(--border);margin-bottom:4px;
+}
+.hist-row{
+  display:flex;align-items:baseline;gap:14px;
+  padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;
+}
+.hist-row:last-child{border-bottom:none;}
+.hist-date{color:var(--gold);min-width:68px;font-size:11px;}
+.hist-name{color:var(--text);flex:1;}
+.hist-tab{color:var(--muted);font-size:11px;}
+.empty-hist{font-size:13px;color:var(--muted);text-align:center;padding:48px 0;line-height:2;}
+
+/* global add modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-bg.show{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px 30px;width:360px;transform:translateY(8px);transition:transform 0.2s;}
+.modal-bg.show .modal{transform:translateY(0);}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;margin-bottom:20px;letter-spacing:-0.5px;}
+.modal label{display:block;font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.modal input,.modal select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 13px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;margin-bottom:14px;}
+.modal input:focus,.modal select:focus{border-color:var(--gold);}
+.modal select option{background:var(--surface2);}
+.modal-row{display:flex;gap:8px;margin-top:4px;}
+.m-cancel{flex:1;padding:10px;background:none;border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.m-ok{flex:1;padding:10px;background:var(--gold);border:none;border-radius:var(--r-sm);color:#1a1610;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.m-ok:hover{opacity:0.9;}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- LEFT -->
+  <aside class="left">
+    <div class="time-display">
+      <div class="time-big" id="clock">00:00</div>
+      <div class="time-date" id="dateline">--</div>
+    </div>
+
+    <div class="left-divider"></div>
+
+    <div class="stat-group">
+      <div class="stat-row">
+        <span class="stat-label">每天</span>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-daily" id="bar-daily" style="width:0%"></div></div>
+        <span class="stat-nums" id="nums-daily">0/0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">每周</span>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-weekly" id="bar-weekly" style="width:0%"></div></div>
+        <span class="stat-nums" id="nums-weekly">0/0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">每月</span>
+        <div class="stat-bar-wrap"><div class="stat-bar bar-monthly" id="bar-monthly" style="width:0%"></div></div>
+        <span class="stat-nums" id="nums-monthly">0/0</span>
+      </div>
+    </div>
+
+    <div class="left-divider2"></div>
+
+    <div class="today-label">本周完成</div>
+    <div class="summary-cards">
+      <div class="sum-card">
+        <div class="sum-big" id="sum-done">0</div>
+        <div class="sum-small">已完成</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-big" id="sum-remain">0</div>
+        <div class="sum-small">待完成</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-big" id="sum-pct">0%</div>
+        <div class="sum-small">完成率</div>
+      </div>
+    </div>
+
+    <div class="reset-notice" id="reset-notice"></div>
+
+    <div class="left-bottom">
+      <div class="status-line" id="status-line">加载中…</div>
+    </div>
+  </aside>
+
+  <!-- RIGHT -->
+  <main class="right">
+    <div class="tabbar">
+      <button class="tab-btn active" onclick="switchTab('daily')">每天</button>
+      <button class="tab-btn" onclick="switchTab('weekly')">每周</button>
+      <button class="tab-btn" onclick="switchTab('monthly')">每月 / 季度</button>
+      <button class="tab-btn" onclick="switchTab('history')">完成记录</button>
+      <div class="tabbar-right">
+        <button class="hdr-btn" id="reset-btn" onclick="resetCurrent()">重置本周期</button>
+        <button class="hdr-btn accent" id="add-btn" onclick="openGlobalModal()">+ 新增任务</button>
+      </div>
+    </div>
+
+    <div class="task-scroll">
+      <div id="tab-daily"   class="tab-content active"></div>
+      <div id="tab-weekly"  class="tab-content"></div>
+      <div id="tab-monthly" class="tab-content"></div>
+      <div id="tab-history" class="tab-content">
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- global add modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-title">新增任务</div>
+    <label>任务名称</label>
+    <input type="text" id="g-name" placeholder="例：擦纱窗">
+    <label>频率</label>
+    <select id="g-tab">
+      <option value="daily">每天</option>
+      <option value="weekly" selected>每周</option>
+      <option value="monthly">每月 / 季度</option>
+    </select>
+    <label>分组名称</label>
+    <input type="text" id="g-sec" placeholder="例：全屋清扫（留空为自定义）">
+    <label>标签</label>
+    <select id="g-tag">
+      <option value="">无</option>
+      <option value="warn">重点</option>
+      <option value="bi">隔周</option>
+      <option value="plant">植物</option>
+    </select>
+    <div class="modal-row">
+      <button class="m-cancel" onclick="closeModal()">取消</button>
+      <button class="m-ok" onclick="globalAdd()">添加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── default data ──────────────────────────────────────────
+const DEFAULT = {
+  daily:{sections:[
+    {label:"饭后顺手",tasks:[{id:"d1",name:"擦灶台",warn:true},{id:"d2",name:"洗碗后擦干净水槽"},{id:"d3",name:"厨余垃圾及时处理"}]},
+    {label:"睡前 5 分钟",tasks:[{id:"d4",name:"杂物归位"},{id:"d5",name:"垃圾桶超过半桶就倒"},{id:"d6",name:"沙发/床上物品整理"}]}
+  ]},
+  weekly:{sections:[
+    {label:"全屋清扫",tasks:[{id:"w1",name:"吸尘/扫地（含地毯）"},{id:"w2",name:"拖地"},{id:"w3",name:"桌面台面搁板擦拭"},{id:"w4",name:"镜子擦亮"}]},
+    {label:"植物",tasks:[{id:"w5",name:"浇花",plant:true},{id:"w6",name:"检查叶片/修剪枯叶",plant:true}]},
+    {label:"卫生间",tasks:[{id:"w7",name:"马桶内外清洁",warn:true},{id:"w8",name:"洗手台水槽擦拭",warn:true},{id:"w9",name:"浴室地板冲洗"},{id:"w10",name:"毛巾浴巾换洗"}]},
+    {label:"厨房",tasks:[{id:"w11",name:"灶台深度清洁",warn:true},{id:"w12",name:"油烟机外表面擦拭",warn:true},{id:"w13",name:"微波炉烤箱内部"},{id:"w14",name:"水槽周边清洁"}]},
+    {label:"隔周轮换",tasks:[{id:"w15",name:"床单被套换洗",bi:true},{id:"w16",name:"枕套换洗",bi:true},{id:"w17",name:"衣柜整理",bi:true},{id:"w18",name:"洗衣机筒自洁",bi:true},{id:"w19",name:"全屋杀虫",bi:true,warn:true}]}
+  ]},
+  monthly:{sections:[
+    {label:"每月一次",tasks:[{id:"m1",name:"床垫除螨",warn:true},{id:"m2",name:"沙发除螨",warn:true},{id:"m3",name:"枕头除螨或晾晒",warn:true},{id:"m4",name:"冰箱内部清洁"},{id:"m5",name:"马桶瓷砖缝刷洗",warn:true},{id:"m6",name:"洗衣机槽深度清洁"},{id:"m7",name:"高处角落掸灰"},{id:"m8",name:"风扇叶片灯罩除尘"},{id:"m9",name:"床底沙发底吸尘"},{id:"m10",name:"开关面板门把手消毒"}]},
+    {label:"每季度一次",tasks:[{id:"q1",name:"地毯深度清洗",warn:true},{id:"q2",name:"油烟机拆洗",warn:true},{id:"q3",name:"空调滤网清洗"},{id:"q4",name:"窗户纱窗清洗"},{id:"q5",name:"阳台大扫除"},{id:"q6",name:"被子枕头晾晒"},{id:"q7",name:"柜子内部整理"}]}
+  ]}
+};
+
+// ── persistence ───────────────────────────────────────────
+let appData,state,history,lastKeys;
+function load(){
+  try{appData =JSON.parse(localStorage.getItem('hd_data'));}catch(e){}
+  try{state   =JSON.parse(localStorage.getItem('hd_state'));}catch(e){}
+  try{history =JSON.parse(localStorage.getItem('hd_history'));}catch(e){}
+  try{lastKeys=JSON.parse(localStorage.getItem('hd_lastkeys'));}catch(e){}
+  if(!appData) appData =JSON.parse(JSON.stringify(DEFAULT));
+  if(!state)   state   ={};
+  if(!history) history =[];
+  if(!lastKeys)lastKeys={};
+}
+function save(){
+  try{
+    localStorage.setItem('hd_data',    JSON.stringify(appData));
+    localStorage.setItem('hd_state',   JSON.stringify(state));
+    localStorage.setItem('hd_history', JSON.stringify(history));
+    localStorage.setItem('hd_lastkeys',JSON.stringify(lastKeys));
+  }catch(e){}
+}
+
+// ── time helpers ──────────────────────────────────────────
+const DAYS=['日','一','二','三','四','五','六'];
+const TNAMES={daily:'每天',weekly:'每周',monthly:'每月/季度'};
+function fmtDate(d){return(d.getMonth()+1)+'月'+d.getDate()+'日';}
+function dayKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function weekKey(d){const dy=d.getDay()||7;const m=new Date(d);m.setDate(d.getDate()-dy+1);return m.getFullYear()+'-'+(m.getMonth()+1)+'-'+m.getDate();}
+function monthKey(d){return d.getFullYear()+'-'+(d.getMonth()+1);}
+
+// ── auto-reset ────────────────────────────────────────────
+let resetMsgs=[];
+function archiveReset(tabId,label){
+  const ds=fmtDate(new Date());
+  appData[tabId].sections.forEach(s=>s.tasks.forEach(t=>{
+    if(state[t.id]){
+      history.unshift({date:state[t.id],name:t.name,tab:tabId,archivedAt:ds,ts:Date.now()});
+      state[t.id]=null;
+    }
+  }));
+  if(history.length>500)history.length=500;
+  resetMsgs.push(label+'任务已自动归档');
+}
+function checkReset(){
+  const now=new Date(); resetMsgs=[];
+  const dk=dayKey(now),wk=weekKey(now),mk=monthKey(now);
+  if(lastKeys.daily   && lastKeys.daily!==dk)   archiveReset('daily','每天');
+  if(lastKeys.weekly  && lastKeys.weekly!==wk)  archiveReset('weekly','每周');
+  if(lastKeys.monthly && lastKeys.monthly!==mk) archiveReset('monthly','每月');
+  lastKeys.daily=dk; lastKeys.weekly=wk; lastKeys.monthly=mk;
+  save();
+  if(resetMsgs.length){
+    const n=document.getElementById('reset-notice');
+    n.textContent=resetMsgs.join('；');
+    n.classList.add('show');
+    setTimeout(()=>n.classList.remove('show'),7000);
+  }
+}
+
+// ── clock ─────────────────────────────────────────────────
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=
+    String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('dateline').textContent=
+    now.getFullYear()+' · '+(now.getMonth()+1)+'月'+now.getDate()+'日  周'+DAYS[now.getDay()];
+}
+
+// ── left panel stats ──────────────────────────────────────
+function updateLeft(){
+  let totalAll=0,doneAll=0;
+  ['daily','weekly','monthly'].forEach(tabId=>{
+    let t=0,d=0;
+    appData[tabId].sections.forEach(s=>s.tasks.forEach(tk=>{t++;if(state[tk.id])d++;}));
+    const pct=t?Math.round(d/t*100):0;
+    document.getElementById('bar-'+tabId).style.width=pct+'%';
+    document.getElementById('nums-'+tabId).textContent=d+'/'+t;
+    totalAll+=t; doneAll+=d;
+  });
+  document.getElementById('sum-done').textContent=doneAll;
+  document.getElementById('sum-remain').textContent=totalAll-doneAll;
+  document.getElementById('sum-pct').textContent=totalAll?Math.round(doneAll/totalAll*100)+'%':'0%';
+
+  // status line
+  const remain=totalAll-doneAll;
+  const sl=document.getElementById('status-line');
+  if(remain===0) sl.innerHTML='所有任务已完成 <span>✦</span>';
+  else sl.innerHTML='还有 <span>'+remain+'</span> 项待完成';
+}
+
+// ── toggle ────────────────────────────────────────────────
+function toggle(id,tabId){
+  if(state[id]){state[id]=null;}
+  else{
+    const ds=fmtDate(new Date());
+    state[id]=ds;
+    let name='';
+    appData[tabId].sections.forEach(s=>s.tasks.forEach(t=>{if(t.id===id)name=t.name;}));
+    history.unshift({date:ds,name,tab:tabId,ts:Date.now()});
+    if(history.length>500)history.length=500;
+  }
+  save();render();
+}
+
+function delTask(tabId,secLabel,id,e){
+  e.stopPropagation();
+  const s=appData[tabId].sections.find(s=>s.label===secLabel);
+  if(s)s.tasks=s.tasks.filter(t=>t.id!==id);
+  delete state[id];
+  save();render();
+}
+
+// ── inline add ────────────────────────────────────────────
+let openAddSec=null; // {tabId, secLabel}
+
+function showInlineAdd(tabId,secLabel){
+  openAddSec={tabId,secLabel};
+  render(); // re-render shows the input row
+  // focus after render
+  setTimeout(()=>{
+    const inp=document.getElementById('inline-inp');
+    if(inp)inp.focus();
+  },60);
+}
+
+function inlineConfirm(){
+  const inp=document.getElementById('inline-inp');
+  if(!inp)return;
+  const name=inp.value.trim();
+  if(!name){openAddSec=null;render();return;}
+  const {tabId,secLabel}=openAddSec;
+  const s=appData[tabId].sections.find(s=>s.label===secLabel);
+  if(s){s.tasks.push({id:'c'+Date.now(),name});}
+  openAddSec=null;
+  save();render();
+}
+
+function inlineCancel(){openAddSec=null;render();}
+
+// ── render tasks ──────────────────────────────────────────
+let currentTab='daily';
+
+function renderTaskTab(tabId){
+  const container=document.getElementById('tab-'+tabId);
+  const tab=appData[tabId];
+  let html='';
+  tab.sections.forEach(sec=>{
+    if(!sec.tasks.length && !(openAddSec&&openAddSec.tabId===tabId&&openAddSec.secLabel===sec.label))return;
+    html+=`<div class="section">
+      <div class="sec-header">
+        <span class="sec-name">${sec.label}</span>
+        <span class="sec-line"></span>
+        <button class="sec-add" onclick="showInlineAdd('${tabId}','${sec.label}')">+ 添加</button>
+      </div>
+      <div class="task-grid">`;
+    sec.tasks.forEach(task=>{
+      const done=!!state[task.id];
+      let tags='';
+      if(task.warn) tags+=`<span class="tag tag-warn">重点</span>`;
+      if(task.bi)   tags+=`<span class="tag tag-bi">隔周</span>`;
+      if(task.plant)tags+=`<span class="tag tag-plant">植物</span>`;
+      const dateStr=done?`<div class="t-date">${state[task.id]} 完成</div>`:'';
+      html+=`<div class="task-card ${done?'done':''}" onclick="toggle('${task.id}','${tabId}')">
+        <div class="t-check"><div class="t-tick"></div></div>
+        <div class="t-body">
+          <div class="t-name">${task.name}</div>
+          ${tags?`<div class="t-tags">${tags}</div>`:''}
+          ${dateStr}
+        </div>
+        <button class="t-del" onclick="delTask('${tabId}','${sec.label}','${task.id}',event)">×</button>
+      </div>`;
+    });
+    html+='</div>';
+    // inline add row for this section
+    if(openAddSec&&openAddSec.tabId===tabId&&openAddSec.secLabel===sec.label){
+      html+=`<div class="inline-add-row">
+        <input class="inline-input" id="inline-inp" placeholder="任务名称，回车确认"
+          onkeydown="if(event.key==='Enter')inlineConfirm();if(event.key==='Escape')inlineCancel();">
+        <button class="inline-ok" onclick="inlineConfirm()">确认</button>
+        <button class="inline-cancel" onclick="inlineCancel()">取消</button>
+      </div>`;
+    }
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!history.length){el.innerHTML=`<div class="empty-hist">还没有完成记录<br>打勾任务后会在这里显示</div>`;return;}
+  const groups={};
+  history.slice(0,300).forEach(h=>{
+    const k=h.archivedAt?h.archivedAt+'（自动归档）':h.date;
+    if(!groups[k])groups[k]=[];
+    groups[k].push(h);
+  });
+  let html='';
+  Object.keys(groups).forEach(k=>{
+    html+=`<div class="hist-group"><div class="hist-group-label">${k}</div>`;
+    groups[k].forEach(h=>{
+      html+=`<div class="hist-row">
+        <span class="hist-date">${h.date}</span>
+        <span class="hist-name">${h.name}</span>
+        <span class="hist-tab">${TNAMES[h.tab]||''}</span>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function render(){
+  if(currentTab==='history') renderHistory();
+  else renderTaskTab(currentTab);
+  updateLeft();
+}
+
+// ── tab switch ────────────────────────────────────────────
+function switchTab(tabId){
+  openAddSec=null;
+  currentTab=tabId;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active',['daily','weekly','monthly','history'][i]===tabId);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+tabId).classList.add('active');
+  const show=tabId!=='history';
+  document.getElementById('reset-btn').style.display=show?'':'none';
+  document.getElementById('add-btn').style.display=show?'':'none';
+  render();
+}
+
+function resetCurrent(){
+  if(currentTab==='history')return;
+  archiveReset(currentTab,TNAMES[currentTab]);
+  save();render();
+}
+
+// ── global modal ──────────────────────────────────────────
+function openGlobalModal(){
+  document.getElementById('g-name').value='';
+  document.getElementById('g-sec').value='';
+  document.getElementById('g-tag').value='';
+  document.getElementById('g-tab').value=currentTab==='history'?'weekly':currentTab;
+  document.getElementById('modal').classList.add('show');
+  setTimeout(()=>document.getElementById('g-name').focus(),80);
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function globalAdd(){
+  const name=document.getElementById('g-name').value.trim();
+  if(!name)return;
+  const tabId=document.getElementById('g-tab').value;
+  const secLabel=document.getElementById('g-sec').value.trim()||'自定义';
+  const tag=document.getElementById('g-tag').value;
+  const task={id:'c'+Date.now(),name};
+  if(tag==='warn') task.warn=true;
+  if(tag==='bi')   task.bi=true;
+  if(tag==='plant')task.plant=true;
+  let sec=appData[tabId].sections.find(s=>s.label===secLabel);
+  if(!sec){sec={label:secLabel,tasks:[]};appData[tabId].sections.push(sec);}
+  sec.tasks.push(task);
+  save();closeModal();
+  if(currentTab!==tabId)switchTab(tabId);else render();
+}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('g-name').addEventListener('keydown',e=>{if(e.key==='Enter')globalAdd();if(e.key==='Escape')closeModal();});
+
+// ── boot ──────────────────────────────────────────────────
+load();
+checkReset();
+updateClock();
+render();
+setInterval(()=>{updateClock();checkReset();render();},60000);
+</script>
+</body>
+</html>
