@@ -392,7 +392,7 @@ html,body{
     <div class="reset-notice" id="reset-notice"></div>
 
     <div class="mascot-wrap">
-      <img class="mascot-img" id="mascot" src="clawd-idle.gif" alt="">
+      <img class="mascot-img" id="mascot" alt="">
     </div>
   </aside>
 
@@ -496,7 +496,11 @@ const GIFS={idle:'clawd-idle.gif',sweep:'clawd-sweeping.gif',happy:'clawd-happy.
 let mState='idle',happyTimer=null,sweepActive=false;
 function setMascot(s){
   mState=s;
-  document.getElementById('mascot').src=GIFS[s]+'?t='+Date.now();
+  const el=document.getElementById('mascot');
+  if(!el)return;
+  // Force iOS Safari to reload gif by resetting src
+  el.src='';
+  requestAnimationFrame(()=>{ el.src=GIFS[s]+'?t='+Date.now(); });
 }
 function triggerHappy(){
   if(happyTimer)clearTimeout(happyTimer);
@@ -715,8 +719,31 @@ function globalAdd(){
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('g-name').addEventListener('keydown',e=>{if(e.key==='Enter')globalAdd();if(e.key==='Escape')closeModal();});
 
-load();checkReset();updateClock();render();restoreMascot();
-setInterval(()=>{updateClock();checkReset();render();scheduleSweepCheck();},60000);
+// preload all gifs then boot
+function preloadGifs(callback){
+  let loaded=0;
+  const total=Object.keys(GIFS).length;
+  Object.values(GIFS).forEach(src=>{
+    const img=new Image();
+    img.onload=img.onerror=()=>{loaded++;if(loaded>=total)callback();};
+    img.src=src;
+  });
+  // fallback: boot anyway after 3s even if gifs fail
+  setTimeout(callback,3000);
+}
+
+function boot(){
+  load();checkReset();updateClock();render();
+  // inject gif src after DOM + preload ready
+  restoreMascot();
+  setInterval(()=>{updateClock();checkReset();render();scheduleSweepCheck();},60000);
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',()=>preloadGifs(boot));
+}else{
+  preloadGifs(boot);
+}
 </script>
 </body>
 </html>
