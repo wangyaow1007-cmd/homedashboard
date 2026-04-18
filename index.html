@@ -498,9 +498,8 @@ function setMascot(s){
   mState=s;
   const el=document.getElementById('mascot');
   if(!el)return;
-  // Force iOS Safari to reload gif by resetting src
   el.src='';
-  requestAnimationFrame(()=>{ el.src=GIFS[s]+'?t='+Date.now(); });
+  requestAnimationFrame(()=>{ el.src=GIFS[s]; });
 }
 function triggerHappy(){
   if(happyTimer)clearTimeout(happyTimer);
