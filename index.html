@@ -285,23 +285,51 @@ html,body{
 }
 .inline-cancel:hover{border-color:var(--black);color:var(--black);}
 
-/* history */
-.hist-group{margin-bottom:48px;}
-.hist-group-label{
-  font-size:14px;font-weight:700;letter-spacing:0.18em;
-  text-transform:uppercase;color:var(--gray);
-  padding-bottom:12px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:12px;
+/* ── History redesign ── */
+.hist-stats{
+  display:flex;gap:0;margin-bottom:32px;
+  background:var(--card-bg);border-radius:16px;
+  overflow:hidden;border:1px solid var(--border);
 }
-.hist-row{
-  display:flex;align-items:center;gap:16px;
-  padding:14px 0;border-bottom:1px solid var(--gray-light);
-  font-size:15px;
+.hist-stat{flex:1;padding:22px 16px;text-align:center;}
+.hist-stat+.hist-stat{border-left:1px solid var(--border);}
+.hist-stat-num{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:var(--black);}
+.hist-stat-lbl{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gray);margin-top:6px;}
+
+.hist-activity{margin-bottom:40px;}
+.hist-act-label{font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--gray);margin-bottom:14px;}
+.hist-bars{display:flex;gap:6px;align-items:flex-end;height:52px;}
+.hist-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.hist-bar{width:100%;border-radius:3px 3px 0 0;background:var(--gray-mid);min-height:2px;}
+.hist-bar.has-data{background:var(--gray);}
+.hist-bar.today{background:var(--red);}
+.hist-bar-day{font-size:10px;color:var(--gray);letter-spacing:0.04em;}
+
+.hist-day-card{
+  background:var(--card-bg);border-radius:16px;
+  padding:20px 22px;margin-bottom:14px;
+  border:1px solid var(--border);
 }
-.hist-date{color:var(--red);min-width:72px;font-size:12px;letter-spacing:0.04em;}
-.hist-name{color:var(--black);font-size:18px;font-weight:500;flex:1;}
-.hist-tab{color:var(--gray);font-size:14px;}
+.hist-day-hd{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.hist-day-date{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--black);}
+.hist-day-count{
+  font-size:11px;font-weight:600;letter-spacing:0.08em;
+  color:var(--gray);background:var(--gray-light);
+  padding:3px 9px;border-radius:20px;
+}
+.hist-day-archive{font-size:11px;color:var(--gray);letter-spacing:0.04em;margin-left:auto;opacity:0.6;}
+.hist-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.hist-chip{
+  display:inline-flex;align-items:center;
+  font-size:13px;font-weight:500;color:var(--black);
+  background:var(--gray-light);padding:7px 12px;
+  border-radius:8px;border-left:3px solid var(--gray-mid);
+  line-height:1.3;
+}
+.hist-chip.daily{border-left-color:var(--red);}
+.hist-chip.weekly{border-left-color:#5E7CE0;}
+.hist-chip.monthly{border-left-color:#2EBFA5;}
+
 .empty-hist{font-size:18px;color:var(--gray);text-align:center;padding:80px 0;line-height:2.4;letter-spacing:0.06em;}
 
 /* modal */
@@ -355,9 +383,523 @@ html,body{
   box-shadow: 0 8px 24px rgba(255, 77, 32, 0.2);
 }
 .m-ok:hover{opacity:0.9;transform:translateY(-1px);}
+
+/* ── FLIP CLOCK SCREENSAVER ── */
+#screensaver{
+  position:fixed;inset:0;z-index:9999;
+  background:#000;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  cursor:pointer;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.6s ease;
+}
+#screensaver::before{
+  content:'';
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,transparent 30%,rgba(5,15,50,0.65) 100%);
+  pointer-events:none;
+}
+#screensaver.visible{opacity:1;pointer-events:all;}
+
+/* Clock row */
+.fc-wrap{
+  display:flex;align-items:flex-end;gap:1.2vw;
+  position:relative;z-index:1;
+}
+.fc-group{display:flex;gap:0.7vw;}
+
+/* Colon dots */
+.fc-colon{
+  display:flex;flex-direction:column;justify-content:center;gap:1.2vw;
+  padding-bottom:2.5vw;
+}
+.fc-dot{
+  width:0.7vw;height:0.7vw;min-width:5px;min-height:5px;
+  background:#2a2a2a;border-radius:50%;
+}
+
+/* Digit card — use min() so --ch always equals the actual rendered height,
+   preventing fc-inner mismatch when a separate max-height would override */
+.fc-digit{
+  --ch:min(13vw,182px);
+  --cw:min(10vw,140px);
+  --fs:var(--ch);
+  position:relative;
+  width:var(--cw);height:var(--ch);
+  perspective:600px;
+}
+.fc-digit.sm{
+  --ch:min(8.5vw,119px);
+  --cw:min(6.5vw,92px);
+  --fs:var(--ch);
+  perspective:400px;
+}
+
+/* Top / bottom halves — each is a clipping window */
+.fc-half{width:100%;height:50%;overflow:hidden;position:relative;}
+.fc-half.top{
+  border-radius:7px 7px 0 0;
+  background:linear-gradient(180deg,#1e1e1e 0%,#191919 100%);
+  border-bottom:2px solid #000;
+}
+.fc-half.bot{
+  border-radius:0 0 7px 7px;
+  background:linear-gradient(180deg,#161616 0%,#121212 100%);
+}
+
+/*
+  fc-inner: spans FULL card height (= 2× half height), anchored at the dividing line.
+  Both halves render the digit at EXACTLY the same absolute position in card space,
+  so the cut is always pixel-perfectly continuous regardless of font metrics.
+
+  Top half:  inner.top = 0  → inner goes 0→ch, clip shows 0→ch/2 = upper half ✓
+  Bot half:  inner.bottom = 0 → inner bottom = ch/2 (container), top = ch/2−ch = −ch/2
+             → clip shows 0→ch/2 of container = ch/2→ch of the digit = lower half ✓
+*/
+.fc-inner{
+  position:absolute;left:0;right:0;
+  height:var(--ch);
+}
+.fc-half.top .fc-inner{top:0;}
+.fc-half.bot .fc-inner{bottom:0;}
+
+/* Number — fills fc-inner exactly */
+.fc-n{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:var(--fs);
+  line-height:var(--ch);
+  width:100%;text-align:center;
+  color:#c4c4c4;
+  display:block;
+  user-select:none;
+}
+
+/* Single-face flap — same geometry as top half */
+.fc-flap{
+  position:absolute;top:0;left:0;right:0;
+  height:50%;overflow:hidden;
+  transform-origin:bottom center;
+  z-index:10;
+  border-radius:7px 7px 0 0;
+  background:linear-gradient(180deg,#1e1e1e 0%,#191919 100%);
+  border-bottom:2px solid #000;
+}
+/* Flap's inner: same as top half (top:0) so digit aligns with static top */
+.fc-flap .fc-inner{top:0;position:absolute;left:0;right:0;height:var(--ch);}
+
+@keyframes fcFold{
+  0%  {transform:rotateX(0deg);}
+  100%{transform:rotateX(-90deg);}
+}
+.fc-digit.flipping .fc-flap{
+  animation:fcFold 0.22s ease-in forwards;
+}
+
+/* Label below card */
+.fc-lbl{
+  text-align:center;
+  font-size:10px;font-weight:600;letter-spacing:0.3em;
+  text-transform:uppercase;color:#2a2a2a;
+  margin-top:12px;
+}
+
+/* Date + hint */
+.ss-date{
+  margin-top:48px;
+  font-size:13px;font-weight:400;letter-spacing:0.28em;
+  text-transform:uppercase;color:#222;
+  position:relative;z-index:1;
+}
+.ss-hint{
+  position:absolute;bottom:32px;
+  font-size:10px;letter-spacing:0.22em;color:#1c1c1c;
+  text-transform:uppercase;
+  animation:pulse-hint 4s ease-in-out infinite;
+  z-index:1;
+}
+@keyframes pulse-hint{0%,100%{opacity:0.3;}50%{opacity:0.85;}}
+
+/* ═══════════════════════════════════════════
+   iPad / Touch Adaptation
+═══════════════════════════════════════════ */
+*{-webkit-tap-highlight-color:transparent;}
+button,.task-card,.tab-btn,.hdr-btn,.sec-add,.inline-ok,.inline-cancel,.m-ok,.m-cancel{touch-action:manipulation;}
+
+/* Glass sidebar */
+.left{
+  background:rgba(28,28,30,0.94)!important;
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+}
+
+/* Safe area insets (iPad home indicator) */
+.task-scroll{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+
+/* Touch: no hover states, always-visible delete, tap feedback */
+@media(hover:none){
+  .t-del{display:flex!important;opacity:0.28;}
+  .task-card:active .t-del{opacity:1;}
+  .task-card:hover{transform:none!important;box-shadow:none!important;border-color:transparent!important;}
+  .task-card:active{border-color:var(--gray-mid)!important;transform:scale(0.993)!important;}
+  .hdr-btn:hover,.sec-add:hover,.m-cancel:hover,.m-ok:hover{transform:none;opacity:1;}
+}
+
+/* Portrait iPad (≤900px) */
+@media(max-width:900px){
+  .layout{grid-template-columns:256px 1fr;}
+  .clock-num{font-size:84px;}
+  .left-top{padding:26px 20px 18px;}
+  .left-mid{padding:18px 20px 16px;}
+  .left-nums{padding:16px 20px;}
+  .left-status{padding:14px 20px 0;}
+  .left-divider,.left-divider2{margin:0 20px;}
+  .mascot-wrap,.mascot-img{width:200px;height:200px;}
+  .task-scroll{padding:28px 24px 48px;}
+  .tabbar{padding:0 16px;}
+  .tab-btn{padding:0 12px;height:58px;font-size:13px;letter-spacing:0.08em;}
+  .hdr-btn{padding:8px 12px;font-size:12px;}
+  .t-name{font-size:17px;}
+  .task-card{padding:16px 12px;}
+  .t-check{width:34px;height:34px;} /* bigger tap target */
+}
+/* Narrow portrait (≤680px) */
+@media(max-width:680px){
+  .layout{grid-template-columns:210px 1fr;}
+  .clock-num{font-size:62px;}
+  .num-big{font-size:34px;}
+  .left-top{padding:18px 14px 14px;}
+  .left-mid,.left-nums,.left-status{padding-left:14px;padding-right:14px;}
+  .left-divider,.left-divider2{margin:0 14px;}
+  .mascot-wrap,.mascot-img{width:150px;height:150px;}
+  .tab-btn{padding:0 9px;height:52px;font-size:12px;}
+}
+/* Flip clock — portrait iPad sizing */
+@media(max-width:900px){
+  .fc-digit{--ch:min(16vw,150px);--cw:min(12vw,112px);}
+}
+@media(max-width:600px){
+  .fc-digit{--ch:min(19vw,130px);--cw:min(14vw,96px);}
+  .fc-wrap{gap:0.8vw;}
+  .fc-group{gap:0.5vw;}
+}
+
+/* ═══════════════════════════════════════════
+   Progress bar colors (per cycle)
+═══════════════════════════════════════════ */
+#bar-d,#bar-d.full{background:var(--red);}
+#bar-w{background:#5E7CE0;}
+#bar-w.full{background:#7B9EF0;}
+#bar-m{background:#2EBFA5;}
+#bar-m.full{background:#3DD4BC;}
+#sum-w-pct{color:#5E7CE0;}
+#sum-m-pct{color:#2EBFA5;}
+
+/* ═══════════════════════════════════════════
+   Streak badge
+═══════════════════════════════════════════ */
+.streak-badge{
+  display:inline-flex;align-items:center;gap:2px;
+  font-size:11px;font-weight:700;letter-spacing:0.02em;
+  color:var(--red);background:rgba(255,77,32,0.12);
+  padding:3px 8px;border-radius:20px;flex-shrink:0;
+  transition:all 0.2s;
+}
+.streak-badge.hot{color:#ff9500;background:rgba(255,149,0,0.15);}
+
+/* ═══════════════════════════════════════════
+   Task completion animation
+═══════════════════════════════════════════ */
+@keyframes taskComplete{
+  0%{transform:scale(1);}
+  20%{transform:scale(0.972);background:rgba(52,199,89,0.1);}
+  60%{transform:scale(1.010);}
+  100%{transform:scale(1);}
+}
+.task-card.completing{animation:taskComplete 0.38s cubic-bezier(0.4,0,0.2,1);}
+
+/* ═══════════════════════════════════════════
+   Focus mode
+═══════════════════════════════════════════ */
+body.focus-mode .task-card.done{display:none;}
+body.focus-mode .section.all-done{display:none;}
+.focus-btn.on{color:var(--white)!important;border-color:var(--red)!important;background:rgba(255,77,32,0.18)!important;}
+
+/* ═══════════════════════════════════════════
+   Section select-all
+═══════════════════════════════════════════ */
+.sec-all{
+  font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--gray);background:none;border:none;cursor:pointer;
+  padding:0 12px 0 0;transition:color 0.15s;
+  font-family:'Noto Sans SC',sans-serif;touch-action:manipulation;
+}
+.sec-all:hover,.sec-all:active{color:var(--red);}
+.sec-all.undo{color:#5E7CE0;}
+.sec-all.undo:hover,.sec-all.undo:active{color:#7B9EF0;}
+
+/* ═══════════════════════════════════════════
+   Screensaver progress chip
+═══════════════════════════════════════════ */
+.ss-progress{
+  position:absolute;bottom:72px;z-index:1;
+  display:flex;gap:32px;
+  animation:pulse-hint 6s ease-in-out infinite;
+}
+.ss-prog-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.ss-prog-num{
+  font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;
+  color:#1e1e1e;transition:color 0.8s;
+}
+.ss-prog-num.lit{color:#444;}
+.ss-prog-num.done{color:var(--red);}
+.ss-prog-label{font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:#1c1c1c;}
+
+/* ── DEAD CODE kept for compat — remove old classes ── */
+.flip-static{
+  position:absolute;inset:0;
+  border-radius:6px;
+  overflow:hidden;
+}
+
+/* Top half static — shows current number upper half */
+.flip-static-top{
+  position:absolute;left:0;top:0;width:100%;height:50%;
+  background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+  border-radius:6px 6px 0 0;
+  overflow:hidden;
+  display:flex;align-items:flex-end;justify-content:center;
+}
+
+/* Bottom half static — shows NEXT number lower half */
+.flip-static-bot{
+  position:absolute;left:0;top:50%;width:100%;height:50%;
+  background: linear-gradient(180deg, #0e0e0e 0%, #0a0a0a 100%);
+  border-radius:0 0 6px 6px;
+  overflow:hidden;
+  display:flex;align-items:flex-start;justify-content:center;
+}
+
+/* Dividing line between top & bottom */
+.flip-divide{
+  position:absolute;left:0;top:50%;width:100%;height:2px;
+  background:#000;
+  z-index:10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* Number style */
+.flip-num{
+  font-family:'Bebas Neue', 'Arial Black', sans-serif;
+  font-size:21vw;
+  line-height:1;
+  user-select:none;
+  letter-spacing:-1px;
+  /* Subtle gradient from lighter gray to slightly darker */
+  background: linear-gradient(180deg, #c0c0c0 0%, #a8a8a8 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+/* Clamp font to match max card size */
+@media (min-width:1215px){
+  .flip-num{ font-size:255px; }
+}
+
+/* Top half num: show only upper portion */
+.flip-static-top .flip-num{
+  transform:translateY(50%);
+  /* Top half gets slightly lighter gradient */
+  background: linear-gradient(180deg, #cccccc 0%, #b4b4b4 50%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* Bottom half num: show only lower portion */
+.flip-static-bot .flip-num{
+  transform:translateY(-50%);
+  background: linear-gradient(180deg, #aaaaaa 0%, #989898 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* ── Flip animation layer ── */
+.flip-flap{
+  position:absolute;left:0;top:0;width:100%;height:50%;
+  transform-origin:bottom center;
+  transform-style:preserve-3d;
+  z-index:20;
+  border-radius:6px 6px 0 0;
+}
+
+.flap-face{
+  position:absolute;inset:0;
+  backface-visibility:hidden;
+  overflow:hidden;
+  display:flex;align-items:flex-end;justify-content:center;
+  border-radius:6px 6px 0 0;
+}
+.flap-face.back{
+  transform:rotateX(180deg);
+  align-items:flex-end;
+}
+
+/* Front of flap = old number top half */
+.flap-face.front{
+  background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+}
+/* Back of flap = new number top half (revealed as it flips) */
+.flap-face.back{
+  background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+}
+
+.flap-face .flip-num{
+  transform:translateY(50%);
+}
+
+/* Shadow overlay on flap during animation */
+.flip-flap::after{
+  content:'';
+  position:absolute;inset:0;
+  background:transparent;
+  border-radius:6px 6px 0 0;
+  transition:background 0.45s;
+  z-index:5;
+  pointer-events:none;
+}
+
+/* The flip animation */
+.flip-unit.flipping .flip-flap{
+  animation: doFlip 0.5s cubic-bezier(0.37, 0, 0.63, 1) forwards;
+}
+@keyframes doFlip{
+  0%  { transform: rotateX(0deg); }
+  100%{ transform: rotateX(-180deg); }
+}
+
+/* Shadow that darkens during flip */
+.flip-unit.flipping .flip-flap::after{
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%);
+}
+
+/* ── Ambient glow behind each card ── */
+.flip-unit::before{
+  content:'';
+  position:absolute;inset:-20px;
+  border-radius:20px;
+  background: radial-gradient(ellipse at center, rgba(30,60,120,0.08) 0%, transparent 70%);
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* ── Label below card ── */
+.flip-label{
+  margin-top:20px;
+  font-size:11px;font-weight:600;
+  letter-spacing:0.35em;text-transform:uppercase;
+  color:#2a2a2a;
+}
+
+/* ── Date below clock ── */
+.ss-date{
+  margin-top:56px;
+  font-size:15px;font-weight:400;letter-spacing:0.3em;
+  text-transform:uppercase;color:#252525;
+}
+
+/* ── Hint at bottom ── */
+.ss-hint{
+  position:absolute;bottom:36px;
+  font-size:11px;letter-spacing:0.2em;color:#1c1c1c;
+  text-transform:uppercase;
+  animation:pulse-hint 4s ease-in-out infinite;
+}
+@keyframes pulse-hint{
+  0%,100%{opacity:0.3;}
+  50%{opacity:0.8;}
+}
 </style>
 </head>
 <body class="dark">
+
+<!-- FLIP CLOCK SCREENSAVER -->
+<div id="screensaver" onclick="dismissScreensaver()">
+  <div class="fc-wrap">
+
+    <!-- Hours -->
+    <div class="fc-group">
+      <div class="fc-digit" id="fd-h1">
+        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-h1-top">0</span></div></div>
+        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-h1-bot">0</span></div></div>
+        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-h1-fl">0</span></div></div>
+      </div>
+      <div class="fc-digit" id="fd-h2">
+        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-h2-top">0</span></div></div>
+        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-h2-bot">0</span></div></div>
+        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-h2-fl">0</span></div></div>
+      </div>
+    </div>
+    <div class="fc-lbl" style="position:static;margin-top:0;align-self:flex-end;padding-bottom:12px;color:#2a2a2a;font-size:10px;letter-spacing:0.3em;">时</div>
+
+    <!-- Colon -->
+    <div class="fc-colon"><div class="fc-dot"></div><div class="fc-dot"></div></div>
+
+    <!-- Minutes -->
+    <div class="fc-group">
+      <div class="fc-digit" id="fd-m1">
+        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-m1-top">0</span></div></div>
+        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-m1-bot">0</span></div></div>
+        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-m1-fl">0</span></div></div>
+      </div>
+      <div class="fc-digit" id="fd-m2">
+        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-m2-top">0</span></div></div>
+        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-m2-bot">0</span></div></div>
+        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-m2-fl">0</span></div></div>
+      </div>
+    </div>
+    <div class="fc-lbl" style="position:static;margin-top:0;align-self:flex-end;padding-bottom:12px;color:#2a2a2a;font-size:10px;letter-spacing:0.3em;">分</div>
+
+    <!-- Colon -->
+    <div class="fc-colon"><div class="fc-dot"></div><div class="fc-dot"></div></div>
+
+    <!-- Seconds -->
+    <div class="fc-group">
+      <div class="fc-digit" id="fd-s1">
+        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-s1-top">0</span></div></div>
+        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-s1-bot">0</span></div></div>
+        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-s1-fl">0</span></div></div>
+      </div>
+      <div class="fc-digit" id="fd-s2">
+        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-s2-top">0</span></div></div>
+        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-s2-bot">0</span></div></div>
+        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-s2-fl">0</span></div></div>
+      </div>
+    </div>
+    <div class="fc-lbl" style="position:static;margin-top:0;align-self:flex-end;padding-bottom:12px;color:#2a2a2a;font-size:10px;letter-spacing:0.3em;">秒</div>
+
+  </div>
+
+  <div class="ss-date" id="ss-date"></div>
+  <div class="ss-progress">
+    <div class="ss-prog-item">
+      <div class="ss-prog-num" id="ss-prog-d">—</div>
+      <div class="ss-prog-label">今日</div>
+    </div>
+    <div class="ss-prog-item">
+      <div class="ss-prog-num" id="ss-prog-w">—</div>
+      <div class="ss-prog-label">本周</div>
+    </div>
+    <div class="ss-prog-item">
+      <div class="ss-prog-num" id="ss-prog-m">—</div>
+      <div class="ss-prog-label">本月</div>
+    </div>
+  </div>
+  <div class="ss-hint">点击屏幕继续</div>
+</div>
+
+
 <div class="layout">
 
   <!-- LEFT -->
@@ -396,16 +938,16 @@ html,body{
 
     <div class="left-nums">
       <div class="num-cell">
-        <div class="num-big accent" id="sum-done">0</div>
-        <div class="num-label">已完成</div>
+        <div class="num-big accent" id="sum-d-pct">—</div>
+        <div class="num-label">今日</div>
       </div>
       <div class="num-cell">
-        <div class="num-big" id="sum-remain">0</div>
-        <div class="num-label">待完成</div>
+        <div class="num-big" id="sum-w-pct">—</div>
+        <div class="num-label">本周</div>
       </div>
       <div class="num-cell">
-        <div class="num-big" id="sum-pct">—</div>
-        <div class="num-label">完成率</div>
+        <div class="num-big" id="sum-m-pct">—</div>
+        <div class="num-label">本月</div>
       </div>
     </div>
 
@@ -425,6 +967,7 @@ html,body{
       <button class="tab-btn" onclick="switchTab('monthly')">每月 / 季度</button>
       <button class="tab-btn" onclick="switchTab('history')">完成记录</button>
       <div class="tabbar-right">
+        <button class="hdr-btn focus-btn" id="focus-btn" onclick="toggleFocusMode()">专注</button>
         <button class="hdr-btn" id="reset-btn" onclick="resetCurrent()">重置本周期</button>
         <button class="hdr-btn accent" id="add-btn" onclick="openGlobalModal()">+ 新增任务</button>
       </div>
@@ -492,10 +1035,12 @@ function load(){
   try{state  =JSON.parse(localStorage.getItem('hd_state'));}catch(e){}
   try{hist   =JSON.parse(localStorage.getItem('hd_history'));}catch(e){}
   try{lastKeys=JSON.parse(localStorage.getItem('hd_lastkeys'));}catch(e){}
+  try{streaks =JSON.parse(localStorage.getItem('hd_streaks'));}catch(e){}
   if(!appData)appData=JSON.parse(JSON.stringify(DEFAULT));
   if(!state)  state={};
   if(!hist)   hist=[];
   if(!lastKeys)lastKeys={};
+  if(!streaks) streaks={};
 }
 function save(){
   try{
@@ -503,11 +1048,65 @@ function save(){
     localStorage.setItem('hd_state',   JSON.stringify(state));
     localStorage.setItem('hd_history', JSON.stringify(hist));
     localStorage.setItem('hd_lastkeys',JSON.stringify(lastKeys));
+    localStorage.setItem('hd_streaks', JSON.stringify(streaks));
   }catch(e){}
 }
 
+let streaks={};
+let focusMode=false;
+let lastPcts={d:{d:0,t:0,pct:0},w:{d:0,t:0,pct:0},m:{d:0,t:0,pct:0}};
+
 const DAYS=['日','一','二','三','四','五','六'];
 const TNAMES={daily:'每天',weekly:'每周',monthly:'每月/季度'};
+
+/* ── Streak: track consecutive completions ── */
+function updateStreak(id){
+  const todayKey=dayKey(new Date());
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yKey=dayKey(yesterday);
+  if(!streaks[id]){streaks[id]={count:1,last:todayKey};}
+  else if(streaks[id].last===yKey){streaks[id].count++;streaks[id].last=todayKey;}
+  else if(streaks[id].last!==todayKey){streaks[id]={count:1,last:todayKey};}
+}
+
+/* ── Focus mode ── */
+function toggleFocusMode(){
+  focusMode=!focusMode;
+  document.body.classList.toggle('focus-mode',focusMode);
+  const btn=document.getElementById('focus-btn');
+  if(btn)btn.classList.toggle('on',focusMode);
+}
+
+/* ── Section select-all / deselect-all ── */
+function selectAll(tabId,secLabel){
+  const s=appData[tabId].sections.find(s=>s.label===secLabel);
+  if(!s)return;
+  const allDone=s.tasks.every(t=>!!state[t.id]);
+  const ds=fmtDate(new Date());
+  s.tasks.forEach(t=>{
+    if(allDone){state[t.id]=null;}
+    else if(!state[t.id]){
+      state[t.id]=ds;
+      updateStreak(t.id);
+      hist.unshift({date:ds,name:t.name,tab:tabId,ts:Date.now()});
+    }
+  });
+  if(hist.length>500)hist.length=500;
+  if(!allDone)triggerHappy();
+  save();render();
+}
+
+/* ── Screensaver progress ── */
+function updateSSProgress(){
+  ['d','w','m'].forEach(k=>{
+    const el=document.getElementById('ss-prog-'+k);
+    if(!el)return;
+    const p=lastPcts[k];
+    if(!p||!p.t){el.textContent='—';el.className='ss-prog-num';return;}
+    el.textContent=p.pct+'%';
+    el.className='ss-prog-num'+(p.pct===100?' done':p.pct>0?' lit':'');
+  });
+}
 function fmtDate(d){return(d.getMonth()+1)+'月'+d.getDate()+'日';}
 function dayKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function weekKey(d){const dy=d.getDay()||7;const m=new Date(d);m.setDate(d.getDate()-dy+1);return m.getFullYear()+'-'+(m.getMonth()+1)+'-'+m.getDate();}
@@ -590,7 +1189,7 @@ function updateClock(){
 }
 
 function updateLeft(){
-  let ta=0,da=0;
+  const pcts={};
   ['daily','weekly','monthly'].forEach((id,i)=>{
     const k=['d','w','m'][i];
     let t=0,d=0;
@@ -600,26 +1199,39 @@ function updateLeft(){
     b.style.width=pct+'%';
     b.classList.toggle('full',pct===100);
     document.getElementById('frac-'+k).textContent=d+'/'+t;
-    ta+=t;da+=d;
+    pcts[k]={d,t,pct};
   });
-  document.getElementById('sum-done').textContent=da;
-  document.getElementById('sum-remain').textContent=ta-da;
-  document.getElementById('sum-pct').textContent=ta?Math.round(da/ta*100)+'%':'—';
-  const rem=ta-da;
+  lastPcts=pcts;
+  document.getElementById('sum-d-pct').textContent=pcts.d.t?pcts.d.pct+'%':'—';
+  document.getElementById('sum-w-pct').textContent=pcts.w.t?pcts.w.pct+'%':'—';
+  document.getElementById('sum-m-pct').textContent=pcts.m.t?pcts.m.pct+'%':'—';
+  const rem=pcts.d.t-pcts.d.d;
   const st=document.getElementById('left-status');
-  st.innerHTML=rem===0?'<strong>全部完成</strong>，今天辛苦了。':'还有 <strong>'+rem+'</strong> 项待完成';
+  st.innerHTML=pcts.d.t===0?'加载中…'
+    :rem===0?'<strong>今日任务全部完成</strong>，辛苦了。'
+    :'今日还有 <strong>'+rem+'</strong> 项待完成';
+  updateSSProgress();
 }
 
 function toggle(id,tabId){
+  let completing=false;
   if(state[id]){state[id]=null;}
   else{
+    completing=true;
     const ds=fmtDate(new Date());state[id]=ds;
+    updateStreak(id);
     let name='';appData[tabId].sections.forEach(s=>s.tasks.forEach(t=>{if(t.id===id)name=t.name;}));
     hist.unshift({date:ds,name,tab:tabId,ts:Date.now()});
     if(hist.length>500)hist.length=500;
     triggerHappy();
   }
   save();render();
+  if(completing){
+    setTimeout(()=>{
+      const el=document.querySelector(`.task-card[data-id="${id}"]`);
+      if(el){el.classList.add('completing');el.addEventListener('animationend',()=>el.classList.remove('completing'),{once:true});}
+    },10);
+  }
 }
 function delTask(tabId,secLabel,id,e){
   e.stopPropagation();
@@ -653,10 +1265,13 @@ function renderTaskTab(tabId){
   tab.sections.forEach(sec=>{
     const isOpen=openAddSec&&openAddSec.tabId===tabId&&openAddSec.secLabel===sec.label;
     if(!sec.tasks.length&&!isOpen)return;
-    html+=`<div class="section">
+    const allDone=sec.tasks.length>0&&sec.tasks.every(t=>!!state[t.id]);
+    const secLabel=sec.label.replace(/'/g,"\\'");
+    html+=`<div class="section${allDone?' all-done':''}">
       <div class="sec-header">
         <span class="sec-name">${sec.label}</span>
-        <button class="sec-add" onclick="showInlineAdd('${tabId}','${sec.label}')">+ 添加</button>
+        <button class="sec-all${allDone?' undo':''}" onclick="selectAll('${tabId}','${secLabel}')">${allDone?'↩ 撤销':'全选'}</button>
+        <button class="sec-add" onclick="showInlineAdd('${tabId}','${secLabel}')">+ 添加</button>
       </div>
       <div class="task-list">`;
     sec.tasks.forEach(task=>{
@@ -666,12 +1281,20 @@ function renderTaskTab(tabId){
       if(task.bi)   tags+=`<span class="tag tag-bi">隔周</span>`;
       if(task.plant)tags+=`<span class="tag tag-plant">植物</span>`;
       const dateStr=done?`<span class="t-date">${state[task.id]}</span>`:'';
-      html+=`<div class="task-card ${done?'done':''}" onclick="toggle('${task.id}','${tabId}')">
+      // Streak badge (only daily tasks ≥2)
+      let streakHtml='';
+      if(tabId==='daily'&&streaks[task.id]&&streaks[task.id].count>=2){
+        const cnt=streaks[task.id].count;
+        const hot=cnt>=7;
+        streakHtml=`<span class="streak-badge${hot?' hot':''}">${hot?'🔥':'✦'} ${cnt}天</span>`;
+      }
+      html+=`<div class="task-card ${done?'done':''}" data-id="${task.id}" onclick="toggle('${task.id}','${tabId}')">
         <div class="t-check"><div class="t-tick"></div></div>
         <span class="t-name">${task.name}</span>
         <div class="t-tags">${tags}</div>
+        ${streakHtml}
         ${dateStr}
-        <button class="t-del" onclick="delTask('${tabId}','${sec.label}','${task.id}',event)">×</button>
+        <button class="t-del" onclick="delTask('${tabId}','${secLabel}','${task.id}',event)">×</button>
       </div>`;
     });
     html+='</div>';
@@ -691,18 +1314,73 @@ function renderTaskTab(tabId){
 function renderHistory(){
   const el=document.getElementById('history-list');
   if(!hist.length){el.innerHTML=`<div class="empty-hist">还没有完成记录<br>打勾任务后会在这里显示</div>`;return;}
+
+  // ── Stats ──
+  const now=new Date();
+  const curWeek=weekKey(now), curMonth=monthKey(now);
+  let weekCount=0,monthCount=0;
+  hist.forEach(h=>{
+    if(!h.ts)return;
+    const d=new Date(h.ts);
+    if(weekKey(d)===curWeek)weekCount++;
+    if(monthKey(d)===curMonth)monthCount++;
+  });
+
+  // ── 7-day activity bars ──
+  const dayCounts={};
+  const dayMeta=[];
+  const todayK=dayKey(now);
+  for(let i=6;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i);
+    const k=dayKey(d);
+    dayCounts[k]=0;
+    dayMeta.push({k,label:'周'+DAYS[d.getDay()],isToday:k===todayK});
+  }
+  hist.forEach(h=>{
+    if(h.ts){const k=dayKey(new Date(h.ts));if(k in dayCounts)dayCounts[k]++;}
+  });
+  const maxCnt=Math.max(1,...Object.values(dayCounts));
+  const barsHtml=dayMeta.map(({k,label,isToday})=>{
+    const cnt=dayCounts[k]||0;
+    const barH=cnt>0?Math.max(6,Math.round(cnt/maxCnt*44)):2;
+    const cls=isToday?'today':cnt>0?'has-data':'';
+    return `<div class="hist-bar-col"><div class="hist-bar ${cls}" style="height:${barH}px"></div><div class="hist-bar-day">${label}</div></div>`;
+  }).join('');
+
+  // ── Day cards ──
   const groups={};
-  hist.slice(0,300).forEach(h=>{
-    const k=h.archivedAt?h.archivedAt+'（自动归档）':h.date;
+  hist.slice(0,500).forEach(h=>{
+    const k=h.archivedAt?h.archivedAt+'__archive':h.date;
     if(!groups[k])groups[k]=[];groups[k].push(h);
   });
-  let html='';
+  let cardsHtml='';
   Object.keys(groups).forEach(k=>{
-    html+=`<div class="hist-group"><div class="hist-group-label">${k}</div>`;
-    groups[k].forEach(h=>{html+=`<div class="hist-row"><span class="hist-date">${h.date}</span><span class="hist-name">${h.name}</span><span class="hist-tab">${TNAMES[h.tab]||''}</span></div>`;});
-    html+='</div>';
+    const items=groups[k];
+    const isArchive=k.endsWith('__archive');
+    const dateLabel=isArchive?k.replace('__archive',''):k;
+    cardsHtml+=`<div class="hist-day-card">
+      <div class="hist-day-hd">
+        <span class="hist-day-date">${dateLabel}</span>
+        <span class="hist-day-count">${items.length} 项</span>
+        ${isArchive?'<span class="hist-day-archive">自动归档</span>':''}
+      </div>
+      <div class="hist-chips">
+        ${items.map(h=>`<span class="hist-chip ${h.tab||''}">${h.name}</span>`).join('')}
+      </div>
+    </div>`;
   });
-  el.innerHTML=html;
+
+  el.innerHTML=`
+    <div class="hist-stats">
+      <div class="hist-stat"><div class="hist-stat-num">${weekCount}</div><div class="hist-stat-lbl">本周</div></div>
+      <div class="hist-stat"><div class="hist-stat-num">${monthCount}</div><div class="hist-stat-lbl">本月</div></div>
+      <div class="hist-stat"><div class="hist-stat-num">${hist.length}</div><div class="hist-stat-lbl">累计</div></div>
+    </div>
+    <div class="hist-activity">
+      <div class="hist-act-label">近 7 天</div>
+      <div class="hist-bars">${barsHtml}</div>
+    </div>
+    ${cardsHtml}`;
 }
 
 function render(){
@@ -770,11 +1448,111 @@ function preloadGifs(callback){
   setTimeout(callback,3000);
 }
 
+// ── FLIP CLOCK SCREENSAVER ──
+const IDLE_MS = 2 * 60 * 1000;
+let idleTimer = null;
+let ssVisible = false;
+let ssIntervalId = null;
+const WEEK_CN = ['日','一','二','三','四','五','六'];
+const fcCur = {h1:'',h2:'',m1:'',m2:'',s1:'',s2:''};
+
+function fcSetAll(id, ch){
+  ['top','bot','fl'].forEach(p=>{
+    const el = document.getElementById('fd-'+id+'-'+p);
+    if(el) el.textContent = ch;
+  });
+  fcCur[id] = ch;
+}
+
+function fcFlipDigit(id, newCh){
+  if(fcCur[id] === newCh) return;
+  const oldCh = fcCur[id];
+  fcCur[id] = newCh;
+
+  // Flap shows old digit and folds away
+  const fl = document.getElementById('fd-'+id+'-fl');
+  if(fl) fl.textContent = oldCh;
+
+  // Immediately update static top to new digit (hidden under flap, revealed as flap folds)
+  const topEl = document.getElementById('fd-'+id+'-top');
+  if(topEl) topEl.textContent = newCh;
+
+  // Trigger fold animation
+  const unit = document.getElementById('fd-'+id);
+  if(!unit) return;
+  unit.classList.remove('flipping');
+  void unit.offsetWidth;
+  unit.classList.add('flipping');
+
+  // After fold: update bottom half and reset flap
+  setTimeout(()=>{
+    unit.classList.remove('flipping');
+    const botEl = document.getElementById('fd-'+id+'-bot');
+    if(botEl) botEl.textContent = newCh;
+    if(fl) fl.textContent = newCh;
+  }, 230);
+}
+
+function tickSS(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  fcFlipDigit('h1',hh[0]); fcFlipDigit('h2',hh[1]);
+  fcFlipDigit('m1',mm[0]); fcFlipDigit('m2',mm[1]);
+  fcFlipDigit('s1',ss[0]); fcFlipDigit('s2',ss[1]);
+  const dateEl = document.getElementById('ss-date');
+  if(dateEl){
+    dateEl.textContent = now.getFullYear()+' · '+
+      String(now.getMonth()+1).padStart(2,'0')+'.'+
+      String(now.getDate()).padStart(2,'0')+
+      '  周'+WEEK_CN[now.getDay()];
+  }
+  updateSSProgress();
+}
+
+function showScreensaver(){
+  if(ssVisible) return;
+  ssVisible = true;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  fcSetAll('h1',hh[0]); fcSetAll('h2',hh[1]);
+  fcSetAll('m1',mm[0]); fcSetAll('m2',mm[1]);
+  fcSetAll('s1',ss[0]); fcSetAll('s2',ss[1]);
+  tickSS();
+  document.getElementById('screensaver').classList.add('visible');
+  ssIntervalId = setInterval(tickSS, 1000);
+}
+
+function dismissScreensaver(){
+  if(!ssVisible) return;
+  ssVisible = false;
+  document.getElementById('screensaver').classList.remove('visible');
+  if(ssIntervalId){clearInterval(ssIntervalId);ssIntervalId=null;}
+  Object.keys(fcCur).forEach(k=>fcCur[k]='');
+  resetIdleTimer();
+}
+
+function resetIdleTimer(){
+  if(idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(showScreensaver, IDLE_MS);
+}
+
+['click','touchstart','mousemove','keydown'].forEach(evt=>{
+  document.addEventListener(evt,(e)=>{
+    if(e.target.closest('#screensaver')) return;
+    if(ssVisible){dismissScreensaver();return;}
+    resetIdleTimer();
+  },{passive:true});
+});
+
 function boot(){
   load();checkReset();updateClock();render();
-  // inject gif src after DOM + preload ready
   restoreMascot();
   setInterval(()=>{updateClock();checkReset();render();scheduleSweepCheck();},60000);
+  showScreensaver(); // show flip clock immediately on load
 }
 
 if(document.readyState==='loading'){
