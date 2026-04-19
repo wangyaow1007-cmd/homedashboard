@@ -2,9 +2,9 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>家务中控</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -35,6 +35,7 @@ html,body{
   display:grid;
   grid-template-columns:320px 1fr;
   height:100vh;
+  padding-top:env(safe-area-inset-top);
 }
 
 /* ── LEFT ── */
@@ -404,10 +405,31 @@ html,body{
 
 /* Clock row */
 .fc-wrap{
-  display:flex;align-items:flex-end;gap:1.2vw;
+  display:flex;align-items:center;gap:min(2.5vw,28px);
   position:relative;z-index:1;
 }
-.fc-group{display:flex;gap:0.7vw;}
+/* Board: shared card wrapping two digits */
+.fc-board{
+  position:relative;
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  box-shadow:0 6px 32px rgba(0,0,0,0.6);
+}
+.fc-board::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  margin-top:-1px;height:2px;
+  background:#000;z-index:25;pointer-events:none;
+}
+.fc-am-pm{
+  position:absolute;top:9px;left:13px;z-index:30;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:min(1.6vw,20px);letter-spacing:0.18em;
+  color:#3a3a3a;line-height:1;
+}
+.fc-board-inner{display:flex;gap:0;}
+/* Legacy group — kept for compat */
+.fc-group{display:flex;gap:0;}
 
 /* Colon dots */
 .fc-colon{
@@ -422,12 +444,12 @@ html,body{
 /* Digit card — use min() so --ch always equals the actual rendered height,
    preventing fc-inner mismatch when a separate max-height would override */
 .fc-digit{
-  --ch:min(13vw,182px);
-  --cw:min(10vw,140px);
+  --ch:min(22vw,280px);
+  --cw:min(14.5vw,185px);
   --fs:var(--ch);
   position:relative;
   width:var(--cw);height:var(--ch);
-  perspective:600px;
+  perspective:1000px;
 }
 .fc-digit.sm{
   --ch:min(8.5vw,119px);
@@ -439,12 +461,9 @@ html,body{
 /* Top / bottom halves — each is a clipping window */
 .fc-half{width:100%;height:50%;overflow:hidden;position:relative;}
 .fc-half.top{
-  border-radius:7px 7px 0 0;
   background:linear-gradient(180deg,#1e1e1e 0%,#191919 100%);
-  border-bottom:2px solid #000;
 }
 .fc-half.bot{
-  border-radius:0 0 7px 7px;
   background:linear-gradient(180deg,#161616 0%,#121212 100%);
 }
 
@@ -481,9 +500,7 @@ html,body{
   height:50%;overflow:hidden;
   transform-origin:bottom center;
   z-index:10;
-  border-radius:7px 7px 0 0;
   background:linear-gradient(180deg,#1e1e1e 0%,#191919 100%);
-  border-bottom:2px solid #000;
 }
 /* Flap's inner: same as top half (top:0) so digit aligns with static top */
 .fc-flap .fc-inner{top:0;position:absolute;left:0;right:0;height:var(--ch);}
@@ -576,12 +593,11 @@ button,.task-card,.tab-btn,.hdr-btn,.sec-add,.inline-ok,.inline-cancel,.m-ok,.m-
 }
 /* Flip clock — portrait iPad sizing */
 @media(max-width:900px){
-  .fc-digit{--ch:min(16vw,150px);--cw:min(12vw,112px);}
+  .fc-digit{--ch:min(20vw,220px);--cw:min(13.5vw,148px);}
 }
 @media(max-width:600px){
-  .fc-digit{--ch:min(19vw,130px);--cw:min(14vw,96px);}
-  .fc-wrap{gap:0.8vw;}
-  .fc-group{gap:0.5vw;}
+  .fc-digit{--ch:min(21vw,200px);--cw:min(14vw,134px);}
+  .fc-wrap{gap:1.5vw;}
 }
 
 /* ═══════════════════════════════════════════
@@ -828,56 +844,54 @@ body.focus-mode .section.all-done{display:none;}
 <div id="screensaver" onclick="dismissScreensaver()">
   <div class="fc-wrap">
 
-    <!-- Hours -->
-    <div class="fc-group">
-      <div class="fc-digit" id="fd-h1">
-        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-h1-top">0</span></div></div>
-        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-h1-bot">0</span></div></div>
-        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-h1-fl">0</span></div></div>
-      </div>
-      <div class="fc-digit" id="fd-h2">
-        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-h2-top">0</span></div></div>
-        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-h2-bot">0</span></div></div>
-        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-h2-fl">0</span></div></div>
-      </div>
-    </div>
-    <div class="fc-lbl" style="position:static;margin-top:0;align-self:flex-end;padding-bottom:12px;color:#2a2a2a;font-size:10px;letter-spacing:0.3em;">时</div>
-
-    <!-- Colon -->
-    <div class="fc-colon"><div class="fc-dot"></div><div class="fc-dot"></div></div>
-
-    <!-- Minutes -->
-    <div class="fc-group">
-      <div class="fc-digit" id="fd-m1">
-        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-m1-top">0</span></div></div>
-        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-m1-bot">0</span></div></div>
-        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-m1-fl">0</span></div></div>
-      </div>
-      <div class="fc-digit" id="fd-m2">
-        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-m2-top">0</span></div></div>
-        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-m2-bot">0</span></div></div>
-        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-m2-fl">0</span></div></div>
+    <!-- Hours board -->
+    <div class="fc-board">
+      <span class="fc-am-pm" id="fc-ampm">AM</span>
+      <div class="fc-board-inner">
+        <div class="fc-digit" id="fd-h1">
+          <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-h1-top">0</span></div></div>
+          <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-h1-bot">0</span></div></div>
+          <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-h1-fl">0</span></div></div>
+        </div>
+        <div class="fc-digit" id="fd-h2">
+          <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-h2-top">0</span></div></div>
+          <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-h2-bot">0</span></div></div>
+          <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-h2-fl">0</span></div></div>
+        </div>
       </div>
     </div>
-    <div class="fc-lbl" style="position:static;margin-top:0;align-self:flex-end;padding-bottom:12px;color:#2a2a2a;font-size:10px;letter-spacing:0.3em;">分</div>
 
-    <!-- Colon -->
-    <div class="fc-colon"><div class="fc-dot"></div><div class="fc-dot"></div></div>
-
-    <!-- Seconds -->
-    <div class="fc-group">
-      <div class="fc-digit" id="fd-s1">
-        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-s1-top">0</span></div></div>
-        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-s1-bot">0</span></div></div>
-        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-s1-fl">0</span></div></div>
-      </div>
-      <div class="fc-digit" id="fd-s2">
-        <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-s2-top">0</span></div></div>
-        <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-s2-bot">0</span></div></div>
-        <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-s2-fl">0</span></div></div>
+    <!-- Minutes board -->
+    <div class="fc-board">
+      <div class="fc-board-inner">
+        <div class="fc-digit" id="fd-m1">
+          <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-m1-top">0</span></div></div>
+          <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-m1-bot">0</span></div></div>
+          <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-m1-fl">0</span></div></div>
+        </div>
+        <div class="fc-digit" id="fd-m2">
+          <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-m2-top">0</span></div></div>
+          <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-m2-bot">0</span></div></div>
+          <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-m2-fl">0</span></div></div>
+        </div>
       </div>
     </div>
-    <div class="fc-lbl" style="position:static;margin-top:0;align-self:flex-end;padding-bottom:12px;color:#2a2a2a;font-size:10px;letter-spacing:0.3em;">秒</div>
+
+    <!-- Seconds board -->
+    <div class="fc-board">
+      <div class="fc-board-inner">
+        <div class="fc-digit" id="fd-s1">
+          <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-s1-top">0</span></div></div>
+          <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-s1-bot">0</span></div></div>
+          <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-s1-fl">0</span></div></div>
+        </div>
+        <div class="fc-digit" id="fd-s2">
+          <div class="fc-half top"><div class="fc-inner"><span class="fc-n" id="fd-s2-top">0</span></div></div>
+          <div class="fc-half bot"><div class="fc-inner"><span class="fc-n" id="fd-s2-bot">0</span></div></div>
+          <div class="fc-flap"><div class="fc-inner"><span class="fc-n" id="fd-s2-fl">0</span></div></div>
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -1495,6 +1509,8 @@ function fcFlipDigit(id, newCh){
 
 function tickSS(){
   const now = new Date();
+  const ampmEl=document.getElementById('fc-ampm');
+  if(ampmEl) ampmEl.textContent=now.getHours()>=12?'PM':'AM';
   const hh = String(now.getHours()).padStart(2,'0');
   const mm = String(now.getMinutes()).padStart(2,'0');
   const ss = String(now.getSeconds()).padStart(2,'0');
