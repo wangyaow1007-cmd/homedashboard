@@ -405,16 +405,16 @@ html,body{
 
 /* Clock row */
 .fc-wrap{
-  display:flex;align-items:center;gap:min(2.5vw,28px);
+  display:flex;align-items:center;gap:min(3vw,36px);
   position:relative;z-index:1;
 }
 /* Board: shared card wrapping two digits */
 .fc-board{
   position:relative;
-  border-radius:14px;
+  border-radius:20px;
   overflow:hidden;
   display:flex;flex-direction:column;
-  box-shadow:0 6px 32px rgba(0,0,0,0.6);
+  box-shadow:0 12px 48px rgba(0,0,0,0.7);
 }
 .fc-board::after{
   content:'';position:absolute;left:0;right:0;top:50%;
@@ -444,18 +444,18 @@ html,body{
 /* Digit card — use min() so --ch always equals the actual rendered height,
    preventing fc-inner mismatch when a separate max-height would override */
 .fc-digit{
-  --ch:min(22vw,280px);
-  --cw:min(14.5vw,185px);
+  --ch:min(30vw,380px);
+  --cw:min(20vw,252px);
   --fs:var(--ch);
   position:relative;
   width:var(--cw);height:var(--ch);
-  perspective:1000px;
+  perspective:1200px;
 }
 .fc-digit.sm{
-  --ch:min(8.5vw,119px);
-  --cw:min(6.5vw,92px);
+  --ch:min(11vw,152px);
+  --cw:min(8.5vw,118px);
   --fs:var(--ch);
-  perspective:400px;
+  perspective:500px;
 }
 
 /* Top / bottom halves — each is a clipping window */
@@ -523,9 +523,9 @@ html,body{
 
 /* Date + hint */
 .ss-date{
-  margin-top:48px;
-  font-size:13px;font-weight:400;letter-spacing:0.28em;
-  text-transform:uppercase;color:#222;
+  margin-top:56px;
+  font-size:15px;font-weight:400;letter-spacing:0.32em;
+  text-transform:uppercase;color:#333;
   position:relative;z-index:1;
 }
 .ss-hint{
@@ -593,11 +593,11 @@ button,.task-card,.tab-btn,.hdr-btn,.sec-add,.inline-ok,.inline-cancel,.m-ok,.m-
 }
 /* Flip clock — portrait iPad sizing */
 @media(max-width:900px){
-  .fc-digit{--ch:min(20vw,220px);--cw:min(13.5vw,148px);}
+  .fc-digit{--ch:min(28vw,320px);--cw:min(19vw,216px);}
 }
 @media(max-width:600px){
-  .fc-digit{--ch:min(21vw,200px);--cw:min(14vw,134px);}
-  .fc-wrap{gap:1.5vw;}
+  .fc-digit{--ch:min(26vw,260px);--cw:min(17.5vw,175px);}
+  .fc-wrap{gap:2vw;}
 }
 
 /* ═══════════════════════════════════════════
